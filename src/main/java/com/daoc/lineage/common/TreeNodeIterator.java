@@ -1,13 +1,8 @@
-package com.lan.lineage.common;
+package com.daoc.lineage.common;
 
 import java.util.Iterator;
 
-/**
- * @author lanxueri
- * @ClassName TreeNodeIterator
- * @Description TODO
- * @createTime 2020-07-31
- */
+
 public class TreeNodeIterator<T> implements Iterator<TreeNode<T>> {
 
     enum ProcessStages {

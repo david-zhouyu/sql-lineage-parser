@@ -1,0 +1,16 @@
+create table test.test(
+ aa varchar(20),
+ bb varchar(30)
+ );
+
+ insert test.test
+ select aa,bb from
+ test1.test1
+ union all
+ select aa,count(1) as bb from
+ test2.test2
+ union all
+  select aa,case when dd = 1 then dd else ee end as bb from
+  test3.test3
+  ;
+

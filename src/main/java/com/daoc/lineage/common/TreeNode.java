@@ -1,4 +1,4 @@
-package com.lan.lineage.common;
+package com.daoc.lineage.common;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -6,12 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-/**
- * @author lanxueri
- * @ClassName TreeNode
- * @Description TODO
- * @createTime 2020-07-31
- */
+
 public class TreeNode<T> implements Iterable<TreeNode<T>> {
     /**
      * 树节点
@@ -114,6 +109,11 @@ public class TreeNode<T> implements Iterable<TreeNode<T>> {
         }
     }
 
+
+//    private Set<TreeNode<T>> getCurrentNodeAllChild(TreeNode<T> node) {
+//        Set<TreeNode<T>> nodeSet = new HashSet<>();
+//        node.children
+//    }
     /**
      * 递归为当前节点以及当前节点的所有父节点增加新的节点
      *
@@ -135,8 +135,9 @@ public class TreeNode<T> implements Iterable<TreeNode<T>> {
     public TreeNode<T> findTreeNode(Comparable<T> cmp) {
         for (TreeNode<T> element : this.elementsIndex) {
             T elData = element.data;
-            if (cmp.compareTo(elData) == 0)
+            if (cmp.compareTo(elData) == 0) {
                 return element;
+            }
         }
 
         return null;
@@ -146,8 +147,9 @@ public class TreeNode<T> implements Iterable<TreeNode<T>> {
     public TreeNode<T> findChildNode(Comparable<T> cmp) {
         for (TreeNode<T> element : this.getChildren()) {
             T elData = element.data;
-            if (cmp.compareTo(elData) == 0)
+            if (cmp.compareTo(elData) == 0) {
                 return element;
+            }
         }
 
         return null;
@@ -160,6 +162,7 @@ public class TreeNode<T> implements Iterable<TreeNode<T>> {
      *
      * @return
      */
+    @Override
     public Iterator<TreeNode<T>> iterator() {
         TreeNodeIterator<T> iterator = new TreeNodeIterator<T>(this);
         return iterator;

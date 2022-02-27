@@ -1,4 +1,4 @@
-package com.lan.lineage.common;
+package com.daoc.lineage.utils;
 
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
@@ -6,12 +6,7 @@ import org.springframework.util.StringUtils;
 import java.util.Collection;
 import java.util.Map;
 
-/**
- * @author lanxueri
- * @ClassName EmptyUtils
- * @Description TODO
- * @createTime 2020-07-31
- */
+
 public class EmptyUtils {
 
     private EmptyUtils() {

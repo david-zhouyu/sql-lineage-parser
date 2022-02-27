@@ -1,33 +1,149 @@
-## 简单sql
-select user_id,user_name
-from user
+insert into temp.temp
+ select  uuid()              as pk_id
+        ,cust_id            as cust_id
+        ,z.uid              as uid
+        ,contact_no         as contact_no
+        ,cnty_cd            as cnty_cd
+        ,area_no            as area_no
+        ,ext_no             as ext_no
+        ,contact_typ        as contact_typ
+        ,chnl_id            as chnl_id
+        ,sc_ind             as sc_ind
+        ,status             as status
+        ,priority           as priority
+        ,contact_no_weight  as contact_no_weight
+        ,t3.contact_type    as is_bind
+        ,t4.contact_type               as bind_dt
+        ,null               as is_flt_delay_phone
+        ,interact_score     as interact_score
+ from    (
+        select  cust_id
+                ,uid
+                ,contact_no
+                ,cnty_cd
+                ,area_no
+                ,ext_no
+                ,contact_typ
+                ,chnl_id
+                ,sc_ind
+                ,status
+                ,priority
+                ,contact_no_weight
+                ,interact_score
+                ,row_number() over(partition by cust_id, contact_typ, contact_no, contact_no_weight, priority) rn
+        from    (
+                        select  t.one_id                                as cust_id
+                                ,t.uid                                  as uid
+                                ,case   when t1.telephone is not null and t2.phone_type = 'mobile' then t1.telephone
+                                        else t2.contact_no
+                                end                                     as contact_no
+                                ,t2.country_code                        as cnty_cd
+                                ,t2.area_no                             as area_no
+                                ,t2.ext_no                              as ext_no
+                                ,case   when t1.telephone is not null and t2.phone_type = 'mobile' then 'mobile'
+                                        else t2.phone_type
+                                end                                     as contact_typ
+                                ,case   when t1.telephone is not null and t2.phone_type = 'mobile' then t1.channle_id
+                                        else t2.channel_id
+                                end                                     as chnl_id
+                                ,t2.associate_type                      as sc_ind
+                                ,t2.status                              as status
+                                ,t2.priority                            as priority
+                                ,case   when t1.telephone is not null and t2.phone_type = 'mobile' then t1.weight_level
+                                end                                     as contact_no_weight
+                                ,t1.interact_score                      as interact_score
+                        from
+                                (
+                                        select  one_id
+                                                ,data_value as uid
+                                        from    czcdm.mid_cbd_oneid_certificate
+                                        where   ds = '${bizdate}'
+                                        and     data_label = 'uid'
 
-## sub sql
-select
-user_id  as uid
-,user_name  as uname
-from
-(
-    select user_id, concat("test",user_name) as user_name
-    from user
-)t
+                                ) t
+                        left outer join
+                                (
+                                        select  one_id
+                                                ,uid
+                                                ,telephone
+                                                ,weight_level
+                                                ,channle_id
+                                                ,interact_score
+                                        from
+                                                (
+                                                        select  one_id
+                                                                ,uid
+                                                                ,telephone
+                                                                ,weight_level
+                                                                ,channle_id
+                                                                ,interact_score
+                                                                ,row_number() over(partition by one_id, telephone order by op_date desc) rn
+                                                        from    czods.s_cbd_oneid_phone
+                                                        where   ds = '${bizdate}'
 
-## union sql
-select
-    user_id
-    ,user_name
-from user
-union all
+                                                ) v
+                                        where v.rn = 1
+                                ) t1
+                        on      t1.one_id = t.one_id
+                        left outer join
+                                (
+                                        select  uid
+                                                ,contact_no
+                                                ,country_code
+                                                ,area_no
+                                                ,ext_no
+                                                ,phone_type
+                                                ,channel_id
+                                                ,associate_type
+                                                ,status
+                                                ,priority
+                                        from    (
+                                                        select  uid
+                                                                ,contact_no         as contact_no
+                                                                ,country_code     as country_code
+                                                                ,area_no               as area_no
+                                                                ,ext_no                 as ext_no
+                                                                ,phone_type         as phone_type
+                                                                ,channel_id         as channel_id
+                                                                ,associate_type as associate_type
+                                                                ,status                 as status
+                                                                ,priority             as priority
+                                                                ,row_number() over(partition by uid, phone_type, contact_no, priority order by op_date desc) rn
+                                                        from    czods.s_svcdb_svc_pc_contact
+                                                        where   ds = '${bizdate}'
+                                                        and     nvl(contact_no,'') != ''
 
-select
-    sub_user_id as user_id
-    ,sub_user_name as user_name
-from sub_user
-
-
-## join sql
-select t1.user_id,t2.user_name,t2.sub_user_id,t2.sub_user_name
-from user t1
-left join sub_user t2
-on t1.user_id = t2.user_id
-
+                                                ) v
+                                        where   v.rn = 1
+                                ) t2
+                        on      t2.uid = t.uid
+                ) w
+        ) z
+ left join
+        (
+            select  uid, contact_type  as contact_type
+            from    (
+                        select  uid,contact_type,status,row_number() over(partition by uid,contact_type order by op_date desc ) as rn
+                        from    czods.s_svcdb_svc_pc_web_contact_info
+                        where   ds = max_pt('czods.s_svcdb_svc_pc_web_contact_info')
+                    )   t3
+            where   t3.rn = 1
+            and     t3.status = 'Y'
+            group by uid
+        )     t3
+ on      z.uid = t3.uid
+ left join
+         (
+             select  uid, contact_type  as contact_type
+             from    (
+                         select  uid,contact_type,status,row_number() over(partition by uid,contact_type order by op_date desc ) as rn
+                         from    czods.s_svcdb_svc_pc_web_contact_info
+                         where   ds = max_pt('czods.s_svcdb_svc_pc_web_contact_info')
+                     )   t3
+             where   t3.rn = 1
+             and     t3.status = 'Y'
+             group by uid
+         )     t4
+  on      z.uid = t4.uid
+ where   z.rn = 1
+;
