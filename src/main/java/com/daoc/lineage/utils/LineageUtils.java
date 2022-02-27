@@ -23,11 +23,16 @@ public class LineageUtils {
         TreeNode<LineageColumn> rootNode = new TreeNode<>(rootLineageColumn);
         for (TreeNode<LineageColumn> treeNode : insertTreeNodeList) {
             rootNode.addChild(treeNode);
+            System.out.println(treeNode.getData().toString());
+            int i = 0;
             for (TreeNode<LineageColumn> columnTreeNode : selectTreeNodeList) {
-                System.out.println(treeNode.getData().toString());
+                System.out.println(i++ +":" + columnTreeNode.getData().toString());
+
                 if(columnTreeNode.getData().getTargetColumnName().equals(treeNode.getData().getTargetColumnName())
                         && columnTreeNode.getData().getExpression().equals(treeNode.getData().getExpression())){
                     treeNode.addChild(columnTreeNode);
+                    System.out.println("***");
+                    System.out.println();
                 }
             }
         }
@@ -67,7 +72,7 @@ public class LineageUtils {
                     //解析表达式，添加解析结果子节点
                     handlerExpr(expr1, itemNode);
 
-                    if (node.getLevel() == 0 || node.getData().getTargetColumnName().equals(column)) {
+                    if (node.getLevel() == 0 || node.getData().getTargetColumnName().equals(column) || "*".equals(node.getData().getTargetColumnName())) {
                         node.addChild(itemNode);
                         isContinue.set(true);
                     }
@@ -161,6 +166,10 @@ public class LineageUtils {
                 handlerInsertUnionSelect(schemaName,tableName,sqlExprs,((SQLUnionQuery) sqlInsertStatement.getQuery().getQuery()).getLeft(),node);
                 handlerInsertUnionSelect(schemaName,tableName,sqlExprs,((SQLUnionQuery) sqlInsertStatement.getQuery().getQuery()).getRight(),node);
             }
+            if(sqlInsertStatement.getQuery().getQuery() instanceof SQLSelectQueryBlock) {
+                SQLSelectQueryBlock query = (SQLSelectQueryBlock) sqlInsertStatement.getQuery().getQuery();
+                buildInsertColumn(node, schemaName, tableName, sqlExprs, query);
+            }
         }
 
     }
@@ -168,7 +177,7 @@ public class LineageUtils {
     private static void buildInsertColumn(TreeNode<LineageColumn> node, String schemaName, String tableName, List<SQLExpr> sqlExprs, SQLSelectQueryBlock firstQueryBlock) {
         List<SQLSelectItem> selectList = firstQueryBlock.getSelectList();
         //insert into table () select xxx;
-        if (sqlExprs.size() != 0 && selectList.size() != 0) {
+        if (sqlExprs.size() != 0 && selectList.size() != 0 && sqlExprs.size() == selectList.size()) {
             // 字段双杀，按照insert指定字段进行对应那么直接对应
             for (int i = 0; i < sqlExprs.size(); i++) {
                 SQLExpr x = sqlExprs.get(i);
@@ -187,7 +196,7 @@ public class LineageUtils {
                 TreeNode<LineageColumn> itemNode = new TreeNode<>(myColumn);
                 SQLExpr expr1 = selectItem.getExpr();
                 //解析表达式，添加解析结果子节点
-                handlerExpr(expr1, itemNode);
+                //handlerExpr(expr1, itemNode);
 
                 if (node.getLevel() == 0 || node.getData().getTargetColumnName().equals(column)) {
                     node.addChild(itemNode);
@@ -211,10 +220,9 @@ public class LineageUtils {
                     myColumn.setTargetTableName(tableName);
                     setColumnType(x.getExpr(), myColumn);
                     TreeNode<LineageColumn> itemNode = new TreeNode<>(myColumn);
-                    SQLExpr expr1 = x.getExpr();
+                    //SQLExpr expr1 = x.getExpr();
                     //解析表达式，添加解析结果子节点
-                    handlerExpr(expr1, itemNode);
-
+                   // handlerExpr(expr1, itemNode);
                     //增加判断是否存在带*
                     boolean isExists = false;
                     for (TreeNode<LineageColumn> child : node.children) {
@@ -247,9 +255,9 @@ public class LineageUtils {
                     myColumn.setTargetTableName(tableName);
                     setColumnType(sqlExpr, myColumn);
                     TreeNode<LineageColumn> itemNode = new TreeNode<>(myColumn);
-                    SQLExpr expr1 = selectList.get(1).getExpr();
-                    //解析表达式，添加解析结果子节点
-                    handlerExpr(expr1, itemNode);
+//                    SQLExpr expr1 = selectList.get(1).getExpr();
+//                    //解析表达式，添加解析结果子节点
+//                    handlerExpr(expr1, itemNode);
                     if (node.getLevel() == 0 || node.getData().getTargetColumnName().equals(column)) {
                         node.addChild(itemNode);
                     }
